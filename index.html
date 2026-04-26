@@ -70,7 +70,13 @@ button {
     font-weight: bold;
 }
 
-/* ================= PAGES ================= */
+/* ================= STATUS ================= */
+#fileStatus {
+    color: #00ffcc;
+    font-size: 14px;
+}
+
+/* ================= PAGE ================= */
 .page {
     width: 95%;
     background: white;
@@ -91,6 +97,38 @@ footer {
     font-size: 13px;
 }
 
+/* ================= MOBILE VERSION ================= */
+@media (max-width: 768px) {
+
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    header img {
+        margin-top: 10px;
+    }
+
+    .container {
+        width: 95%;
+    }
+
+    input, button {
+        width: 95%;
+        display: block;
+        margin: 10px auto;
+    }
+
+    .page {
+        width: 100%;
+        padding: 10px;
+    }
+
+    h3 {
+        text-align: center;
+    }
+}
+
 </style>
 </head>
 
@@ -99,8 +137,8 @@ footer {
 <!-- ================= HEADER ================= -->
 <header>
     <div>
-        <h1>ISO YAWI PDF CONVERTER</h1>
-        <p>DOCX → PDF • Page Rendering Engine design for students</p>
+        <h1>📄 Iso Yawi Document Converter</h1>
+        <p>DOCX → PDF • Page Rendering Engine</p>
     </div>
 
     <img src="images.jfif" alt="Profile">
@@ -111,20 +149,42 @@ footer {
 
     <h3>Upload Document (.docx)</h3>
 
-    <input type="file" id="fileInput" accept=".docx">
+    <input type="file" id="fileInput" accept=".docx" onchange="handleUpload()">
 
-    <br>
+    <p id="fileStatus"></p>
 
-    <button onclick="loadDoc()">Load Document</button>
+    <button id="previewBtn" onclick="loadDoc()" disabled>Preview Document</button>
     <button onclick="exportPDF()">Export PDF</button>
 
     <div id="pages"></div>
 
 </div>
 
+<!-- ================= FOOTER ================= -->
+<footer>
+    © 2026 Iso Yawi | Papua New Guinea University of Technology  
+    <br>
+    Department of Electrical Engineering • Document Converter System  
+    <br>
+    Building Cool Projects for Students
+</footer>
+
 <script>
 
 let pagesContainer = document.getElementById("pages");
+
+/* ================= HANDLE UPLOAD ================= */
+function handleUpload() {
+
+    const file = document.getElementById("fileInput").files[0];
+    const status = document.getElementById("fileStatus");
+    const previewBtn = document.getElementById("previewBtn");
+
+    if (!file) return;
+
+    status.innerHTML = "✅ Uploaded: " + file.name;
+    previewBtn.disabled = false;
+}
 
 /* ================= LOAD DOCX ================= */
 async function loadDoc() {
@@ -173,15 +233,9 @@ async function exportPDF() {
         html2canvas: { scale: 0.8 },
         callback: function (doc) {
 
-            // ================= WATERMARK =================
             doc.setTextColor(200);
             doc.setFontSize(28);
-            doc.text(
-                "Iso Yawi PDF Converter",
-                30,
-                150,
-                { angle: 45 }
-            );
+            doc.text("Iso Yawi PDF Converter", 30, 150, { angle: 45 });
 
             doc.save("Converted_Document.pdf");
         }
@@ -189,15 +243,6 @@ async function exportPDF() {
 }
 
 </script>
-
-<!-- ================= FOOTER (FIXED DUPLICATION) ================= -->
-<footer>
-    <div>
-        <p>© 2026 Iso Yawi | Papua New Guinea University of Technology</p>
-        <p>Department of Electrical Engineering</p>
-        <p>Building Cool Projects for Students</p>
-    </div>
-</footer>
 
 </body>
 </html>

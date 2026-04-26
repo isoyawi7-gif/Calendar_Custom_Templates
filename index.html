@@ -16,8 +16,8 @@
 body {
     margin: 0;
     font-family: Arial;
-    background: #0b0f1a;
-    color: white;
+    background: #f5f7fa;
+    color: #111827;
 }
 
 /* ================= HEADER ================= */
@@ -26,8 +26,19 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    background: #111827;
+    background: white;
     border-bottom: 2px solid #00ffcc;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 18px;
+}
+
+header p {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
 }
 
 header img {
@@ -35,44 +46,38 @@ header img {
     height: 60px;
     border-radius: 50%;
     border: 2px solid #00ffcc;
-    object-fit: cover;
 }
 
-header h1 {
-    margin: 0;
-    font-size: 18px;
-    color: #00ffcc;
-}
-
-header p {
-    margin: 0;
-    font-size: 12px;
-    color: #9ca3af;
-}
-
-/* ================= LAYOUT ================= */
+/* ================= CONTAINER ================= */
 .container {
     width: 90%;
     margin: auto;
     margin-top: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* ================= CONTROLS ================= */
-input, button {
+/* ================= INPUT & BUTTON ================= */
+input {
     padding: 10px;
     margin: 10px;
 }
 
 button {
+    padding: 10px;
+    margin: 10px;
     background: #00ffcc;
     border: none;
     cursor: pointer;
     font-weight: bold;
+    border-radius: 6px;
 }
 
 /* ================= STATUS ================= */
 #fileStatus {
-    color: #00ffcc;
+    color: green;
     font-size: 14px;
 }
 
@@ -81,9 +86,10 @@ button {
     width: 95%;
     background: white;
     color: black;
-    margin: 10px auto;
-    padding: 15px;
+    margin: 15px auto;
+    padding: 20px;
     border-radius: 8px;
+    border: 1px solid #e5e7eb;
 }
 
 /* ================= FOOTER ================= */
@@ -91,13 +97,12 @@ footer {
     text-align: center;
     padding: 15px;
     margin-top: 20px;
-    background: #111827;
+    background: white;
     border-top: 2px solid #00ffcc;
-    color: #9ca3af;
-    font-size: 13px;
+    color: #6b7280;
 }
 
-/* ================= MOBILE VERSION ================= */
+/* ================= MOBILE ================= */
 @media (max-width: 768px) {
 
     header {
@@ -123,10 +128,6 @@ footer {
         width: 100%;
         padding: 10px;
     }
-
-    h3 {
-        text-align: center;
-    }
 }
 
 </style>
@@ -138,7 +139,7 @@ footer {
 <header>
     <div>
         <h1>📄 Iso Yawi Document Converter</h1>
-        <p>DOCX → PDF • Page Rendering Engine</p>
+        <p>DOCX → PDF • Clean Web Converter design for Students</p>
     </div>
 
     <img src="images.jfif" alt="Profile">
@@ -164,7 +165,7 @@ footer {
 <footer>
     © 2026 Iso Yawi | Papua New Guinea University of Technology  
     <br>
-    Department of Electrical Engineering • Document Converter System  
+    Electrical Engineering • Document Converter System  
     <br>
     Building Cool Projects for Students
 </footer>
@@ -172,6 +173,7 @@ footer {
 <script>
 
 let pagesContainer = document.getElementById("pages");
+let selectedFile = null;
 
 /* ================= HANDLE UPLOAD ================= */
 function handleUpload() {
@@ -182,6 +184,8 @@ function handleUpload() {
 
     if (!file) return;
 
+    selectedFile = file;
+
     status.innerHTML = "✅ Uploaded: " + file.name;
     previewBtn.disabled = false;
 }
@@ -189,14 +193,12 @@ function handleUpload() {
 /* ================= LOAD DOCX ================= */
 async function loadDoc() {
 
-    const file = document.getElementById("fileInput").files[0];
-
-    if (!file) {
-        alert("Upload a DOCX file");
+    if (!selectedFile) {
+        alert("Upload a DOCX file first");
         return;
     }
 
-    const buffer = await file.arrayBuffer();
+    const buffer = await selectedFile.arrayBuffer();
 
     pagesContainer.innerHTML = "";
 
@@ -233,7 +235,7 @@ async function exportPDF() {
         html2canvas: { scale: 0.8 },
         callback: function (doc) {
 
-            doc.setTextColor(200);
+            doc.setTextColor(180);
             doc.setFontSize(28);
             doc.text("Iso Yawi PDF Converter", 30, 150, { angle: 45 });
 

@@ -2,225 +2,124 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telecom Coverage Planner</title>
+<title>Iso Yawi PDF Converter</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body {
-    margin: 0;
     font-family: Arial;
     background: #0b0f1a;
     color: white;
     text-align: center;
+    padding: 20px;
 }
 
-h1 { margin: 10px; }
+.container {
+    width: 60%;
+    margin: auto;
+    background: #111827;
+    padding: 20px;
+    border-radius: 10px;
+}
 
-#controls {
+input, button {
     padding: 10px;
-    background: #111827;
-}
-
-canvas {
-    border: 2px solid #00ffcc;
     margin: 10px;
-    background: #0a0f1f;
-    cursor: crosshair;
 }
 
-footer {
-    background: #111827;
-    color: #9ca3af;
-    padding: 15px;
-    font-size: 14px;
-    border-top: 1px solid #00ffcc;
+button {
+    background: #00ffcc;
+    border: none;
+    cursor: pointer;
+}
+
+#output {
+    text-align: left;
+    white-space: pre-wrap;
+    background: #0f172a;
+    padding: 10px;
     margin-top: 10px;
+    border-radius: 8px;
 }
-
-footer p {
-    margin: 5px;
-}
-
-    canvas {
-    border: 2px solid #00ffcc;
-    margin: 10px;
-    background: radial-gradient(circle at center, #0a0f1f, #050814);
-    cursor: crosshair;
-    box-shadow: 0 0 25px rgba(0,255,204,0.2);
-}
-    
 </style>
 </head>
 
 <body>
 
-<h1>Telecom Coverage Map</h1>
+<div class="container">
 
-<div id="controls">
-    Power: <input type="range" id="power" min="1" max="100" value="50">
-    Frequency (MHz): <input type="range" id="freq" min="700" max="2600" value="900">
+<h2>📄 Iso Yawi PDF Converter</h2>
+
+<input type="file" id="fileInput" accept=".docx">
+<br>
+
+<button onclick="convertFile()">Convert to PDF</button>
+
+<button onclick="downloadPDF()">Download PDF</button>
+
+<div id="output">Upload a Word document to preview...</div>
+
 </div>
 
-<canvas id="canvas"></canvas>
-
 <script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+let extractedText = "";
+let pdfDoc;
 
-canvas.width = window.innerWidth - 40;
-canvas.height = window.innerHeight - 150;
+async function convertFile() {
+    const file = document.getElementById("fileInput").files[0];
 
-let towers = [];
-let selected = null;
-
-const gridSize = 30;
-
-// 3D perspective settings
-const perspective = 500;
-const centerX = canvas.width / 2;
-const centerY = canvas.height / 2;
-
-// SIGNAL MODEL (more realistic decay)
-function getSignal(dist, power, freq) {
-    if (dist < 1) return power;
-    return (power * 1000) / (dist * dist * freq);
-}
-
-// PROJECT 2D → 3D-ish perspective
-function project(x, y) {
-    let dx = x - centerX;
-    let dy = y - centerY;
-
-    let z = 200; // fake ground depth effect
-
-    let scale = perspective / (perspective + z);
-
-    return {
-        x: centerX + dx * scale,
-        y: centerY + dy * scale
-    };
-}
-
-// DRAW 3D GRID (perspective lines)
-function drawGrid() {
-    ctx.strokeStyle = "rgba(0,255,204,0.08)";
-
-    for (let i = -canvas.width; i < canvas.width * 2; i += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(i, canvas.height);
-        ctx.stroke();
+    if (!file) {
+        alert("Please upload a DOCX file");
+        return;
     }
 
-    for (let y = 0; y < canvas.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y + 50);
-        ctx.stroke();
-    }
+    const arrayBuffer = await file.arrayBuffer();
+
+    mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+        .then(function(result) {
+            extractedText = result.value;
+            document.getElementById("output").innerText = extractedText;
+        })
+        .catch(function(err) {
+            alert("Error reading file");
+        });
 }
 
-// DRAW SIGNAL GLOW (3D DOMES)
-function drawSignal(x, y, intensity) {
-    const radius = 60 + intensity * 200;
-
-    let gradient = ctx.createRadialGradient(x, y, 5, x, y, radius);
-
-    gradient.addColorStop(0, "rgba(0,255,0,0.4)");
-    gradient.addColorStop(0.4, "rgba(255,255,0,0.2)");
-    gradient.addColorStop(1, "rgba(255,0,0,0)");
-
-    ctx.beginPath();
-    ctx.fillStyle = gradient;
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-}
-
-// DRAW TOWER (3D LOOK)
-function drawTower(t) {
-    // shadow
-    ctx.beginPath();
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.arc(t.x + 3, t.y + 6, 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    // tower body
-    ctx.beginPath();
-    ctx.fillStyle = "#00ffcc";
-    ctx.arc(t.x, t.y, 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    // height line (fake 3D antenna)
-    ctx.beginPath();
-    ctx.strokeStyle = "#00ffcc";
-    ctx.moveTo(t.x, t.y);
-    ctx.lineTo(t.x, t.y - 30);
-    ctx.stroke();
-}
-
-// MAIN DRAW
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const power = document.getElementById("power").value;
-    const freq = document.getElementById("freq").value;
-
-    drawGrid();
-
-    // SIGNAL FIELD (3D effect)
-    for (let t of towers) {
-        let total = 0;
-
-        for (let t2 of towers) {
-            let d = Math.hypot(t.x - t2.x, t.y - t2.y);
-            total += getSignal(d, power, freq);
-        }
-
-        drawSignal(t.x, t.y, total / 500);
+// CREATE PDF WITH WATERMARK
+function downloadPDF() {
+    if (!extractedText) {
+        alert("No content to convert");
+        return;
     }
 
-    // towers on top
-    towers.forEach(drawTower);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+
+    const lines = pdf.splitTextToSize(extractedText, 180);
+
+    let y = 20;
+
+    // MAIN TEXT
+    pdf.setFontSize(12);
+    pdf.text(lines, 10, y);
+
+    // WATERMARK FUNCTION
+    pdf.setTextColor(200, 200, 200);
+    pdf.setFontSize(30);
+    pdf.setFont("helvetica", "bold");
+
+    pdf.text(
+        "Iso Yawi PDF Converter",
+        20,
+        150,
+        { angle: 45, opacity: 0.2 }
+    );
+
+    pdf.save("Iso_Yawi_Converted.pdf");
 }
-
-// ADD TOWER
-canvas.addEventListener("click", (e) => {
-    towers.push({ x: e.offsetX, y: e.offsetY });
-    draw();
-});
-
-// SELECT TOWER
-canvas.addEventListener("mousedown", (e) => {
-    towers.forEach(t => {
-        if (Math.hypot(t.x - e.offsetX, t.y - e.offsetY) < 10) {
-            selected = t;
-        }
-    });
-});
-
-// DRAG
-canvas.addEventListener("mousemove", (e) => {
-    if (selected) {
-        selected.x = e.offsetX;
-        selected.y = e.offsetY;
-        draw();
-    }
-});
-
-// RELEASE
-canvas.addEventListener("mouseup", () => selected = null);
-
-// UI update
-document.getElementById("power").oninput = draw;
-document.getElementById("freq").oninput = draw;
-
-draw();
 </script>
-
-<footer>
-    <p>© 2026 Iso Yawi | Papua New Guinea University of Technology | Electrical Engineering</p>
-    <p>Telecom Coverage Planner Project</p>
-</footer>
 
 </body>
 </html>
